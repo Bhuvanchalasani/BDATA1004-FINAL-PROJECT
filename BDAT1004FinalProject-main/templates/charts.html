@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Charts</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        h1 {
+            color: #007bff;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            margin-bottom: 40px;
+        }
+        .footer {
+            background-color: #007bff;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        .btn-back {
+            margin-bottom: 20px;
+            display: block;
+        }
+        .icons-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .icon-link {
+            text-align: center;
+            color: #007bff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .icon-link:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('index') }}" class="btn btn-primary btn-back">Back to Data</a>
+        <h1 class="text-center">Stock Data Visualizations</h1>
+
+        <!-- Icons for Easy Navigation -->
+        <div class="icons-container">
+            <div class="icon-link" onclick="scrollToChart('lineChart')">
+                <i class="fas fa-chart-line"></i><br>
+                Open/Close Prices
+            </div>
+            <div class="icon-link" onclick="scrollToChart('barChart')">
+                <i class="fas fa-chart-bar"></i><br>
+                Volume
+            </div>
+            <div class="icon-link" onclick="scrollToChart('highLowBarChart')">
+                <i class="fas fa-balance-scale"></i><br>
+                High vs Low Prices
+            </div>
+            <div class="icon-link" onclick="scrollToChart('openPriceComparisonChart')">
+                <i class="fas fa-history"></i><br>
+                3 month Opening Price Comparison
+            </div>
+        </div>
+        
+        <!-- Line Chart: Open and Close Prices -->
+        <div class="chart-container" id="lineChartContainer">
+            <canvas id="lineChart"></canvas>
+        </div>
+        
+        <!-- Bar Chart: Volume -->
+        <div class="chart-container" id="barChartContainer">
+            <canvas id="barChart"></canvas>
+        </div>
+        
+        <!-- Bar Chart: High vs Low Prices -->
+        <div class="chart-container" id="highLowBarChartContainer">
+            <canvas id="highLowBarChart"></canvas>
+        </div>
+
+        <!-- Bar Chart: 3 month Opening Price Comparison -->
+        <div class="chart-container" id="openPriceComparisonChartContainer">
+            <canvas id="openPriceComparisonChart"></canvas>
+        </div>
+        
+    </div>
+    <footer class="footer">
+        <p>&copy; 2024 Price Comparison Dashboard</p>
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Scroll to the chart based on ID
+        function scrollToChart(chartId) {
+            document.getElementById(chartId + 'Container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Example Data for the charts (replace with actual data passed from Flask/Django)
+        let records = {{ records | tojson }};
+        
+        const labels = records.map(record => record.timestamp);
+        const openData = records.map(record => record.open);
+        const closeData = records.map(record => record.close);
+        const volumeData = records.map(record => record.volume);
+        const highData = records.map(record => record.high);
+        const lowData = records.map(record => record.low);
+
+        // Line Chart: Open and Close Prices
+        new Chart(document.getElementById('lineChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Open Price',
+                    data: openData,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 1
+                }, {
+                    label: 'Close Price',
+                    data: closeData,
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return ` ${tooltipItem.dataset.label}: $${tooltipItem.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Price'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Bar Chart: Volume
+        new Chart(document.getElementById('barChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Volume',
+                    data: volumeData,
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return ` ${tooltipItem.dataset.label}: ${tooltipItem.raw.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Volume'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Bar Chart: High vs Low Prices
+        new Chart(document.getElementById('highLowBarChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Highest Price', 'Lowest Price'],
+                datasets: [{
+                    label: 'Prices',
+                    data: [Math.max(...highData), Math.min(...lowData)],
+                    backgroundColor: ['rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return ` ${tooltipItem.dataset.label}: $${tooltipItem.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Price Type'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Price'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Bar Chart: 90 Days Opening Price Comparison
+        const recent100Days = openData.slice(-90); // Most recent 100 days
+        const past100Days = openData.slice(0, 90); // First 100 days in the dataset
+
+        new Chart(document.getElementById('openPriceComparisonChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Past 90 Days', 'Recent 90 Days'],
+                datasets: [{
+                    label: 'Average Opening Price',
+                    data: [average(past100Days), average(recent100Days)],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return ` ${tooltipItem.dataset.label}: $${tooltipItem.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Period'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Opening Price'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Function to calculate the average of an array
+        function average(data) {
+            const sum = data.reduce((a, b) => a + b, 0);
+            return (sum / data.length) || 0;
+        }
+    </script>
+</body>
+</html>
